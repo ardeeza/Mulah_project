@@ -1,79 +1,154 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import Papa from "papaparse";
 
-const App = () => {
-  const [table1, setTable1] = useState([]);
-  const [table2, setTable2] = useState([]);
+import StickyHeadTable from "./components/StickyTable";
+
+const TableDisplay = () => {
+  const [tableData, setTableData] = useState([]);
+  const [processedValues, setProcessedValues] = useState([]);
 
   useEffect(() => {
-    fetch('/data.csv')
-      .then(response => response.text())
-      .then(text => {
-        const rows = text.trim().split('\n').slice(1); // skip header
-        const map = {};
+    Papa.parse("/data.csv", {
+      download: true,
+      header: true,
+      complete: (results) => {
+        const data = results.data;
+        setTableData(data);
 
-        rows.forEach(row => {
-          const [index, value] = row.split(',');
-          map[index.trim()] = parseInt(value.trim(), 10);
+        const valueMap = {};
+        data.forEach((row) => {
+          valueMap[row["Index #"]] = parseInt(row["Value"]);
         });
 
-        
-        const tableOne = [
-          { category: 'Alpha', value: 'A5 + A20' },
-          { category: 'Beta', value: 'A15 / A7' },
-          { category: 'Charlie', value: 'A13 * A12' },
-        ];
+        // Compute values for Table 2
+        const alpha = valueMap["A5"] + valueMap["A20"];
+        const beta = Math.floor(valueMap["A15"] / valueMap["A7"]); // Ensure integer
+        const charlie = valueMap["A13"] * valueMap["A12"];
 
-        
-        const tableTwo = [
-          {
-            category: 'Alpha',
-            value: map['A5'] + map['A20'],
-          },
-          {
-            category: 'Beta',
-            value: Math.floor(map['A15'] / map['A7']),
-          },
-          {
-            category: 'Charlie',
-            value: map['A13'] * map['A12'],
-          },
-        ];
-
-        setTable1(tableOne);
-        setTable2(tableTwo);
-      })
-      .catch(error => console.error('Failed to load CSV:', error));
+        setProcessedValues([
+          { category: "alpha", value: alpha },
+          { category: "beta", value: beta },
+          { category: "charlie", value: charlie },
+        ]);
+      },
+    });
   }, []);
 
-  const renderTable = (title, data) => (
-    <>
-      <h2>{title}</h2>
-      <table border="1" cellPadding="10" cellSpacing="0">
-        <thead>
-          <tr>
-            <th>Category</th>
-            <th>Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(row => (
-            <tr key={row.category}>
-              <td>{row.category}</td>
-              <td>{row.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-
   return (
-    <div style={{ padding: '2rem', fontFamily: 'Arial, sans-serif' }}>
-      {renderTable('Table 1', table1)}
-      <div style={{ marginTop: '2rem' }} />
-      {renderTable('Table 2', table2)}
+    <div className="container" style={styles.container}>
+      <div className="wrapper">
+        <h2 className="title" style={styles.title}>
+          Table 1
+        </h2>
+        <StickyHeadTable
+          rows={tableData}
+          columns={[
+            { id: "Index #", label: "Index", minWidth: 1000 },
+            { id: "Value", label: "Value", minWidth: 1000 },
+          ]}
+        ></StickyHeadTable>
+        {/* <table className="table">
+          <thead>
+            <tr>
+              <th className="tableHeader" style={styles.tableHeader}>
+                Index #
+              </th>
+              <th className="tableHeader" style={styles.tableHeader}>
+                Value
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData.map((row, index) => (
+              <tr key={index}>
+                <td className="tableData" style={styles.tableData}>
+                  {row["Index #"]}
+                </td>
+                <td className="tableData" style={styles.tableData}>
+                  {row["Value"]}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>  */}
+      </div>
+      <div className="wrapper">
+        <h2 className="title" style={styles.title}>
+          Table 2
+        </h2>
+        <StickyHeadTable
+          rows={processedValues}
+          columns={[
+            { id: "category", label: "Category", minWidth: 500 },
+            { id: "value", label: "Value", minWidth: 250 },
+          ]}
+        ></StickyHeadTable>
+
+        {/* <table className="table">
+          <thead>
+            <tr>
+              <th className="tableHeader" style={styles.tableHeader}>
+                Category
+              </th>
+              <th className="tableHeader" style={styles.tableHeader}>
+                Value
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="tableData" style={styles.tableData}>
+                Alpha
+              </td>
+              <td className="tableData" style={styles.tableData}>
+                {processedValues.alpha}
+              </td>
+            </tr>
+            <tr>
+              <td className="tableData" style={styles.tableData}>
+                Beta
+              </td>
+              <td className="tableData" style={styles.tableData}>
+                {processedValues.beta}
+              </td>
+            </tr>
+            <tr>
+              <td className="tableData" style={styles.tableData}>
+                Charlie
+              </td>
+              <td className="tableData" style={styles.tableData}>
+                {processedValues.charlie}
+              </td>
+            </tr>
+          </tbody>
+        </table> */}
+      </div>
     </div>
   );
 };
 
-export default App;
+const styles = {
+  container: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    width: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+  },
+  title: {
+    fontSize: "2em",
+    textAlign: "center ",
+    color:"black"
+  },
+//   tableHeader: {
+//     border: "2px solid white",
+//     padding: "10px 50px",
+//   },
+//   tableData: {
+//     border: "2px solid white",
+//     padding: "10px",
+//   },
+};
+export default TableDisplay;
