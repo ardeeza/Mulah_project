@@ -8,7 +8,7 @@ const TableDisplay = () => {
   const [processedValues, setProcessedValues] = useState([]);
 
   useEffect(() => {
-    Papa.parse("/data.csv", {
+    Papa.parse("${process.env.PUBLIC_URL}/data.csv", {
       download: true,
       header: true,
       complete: (results) => {
